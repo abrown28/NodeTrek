@@ -40,12 +40,15 @@ app.get('/users', user.list);
 var server = http.createServer(app);
 
 io = io.listen(server);
-io.sockets.on('connection', function (socket) {
-	socket.emit('news', { hello: 'world' });
-	socket.on('my other event', function (data) {
-		console.log(data);
-	});
+
+io.configure('development', function() {
+	io.set('log level', 2);
 });
+
+io.configure('production', function(){
+	io.set('log level', 0);
+});
+
 
 server.listen(app.get('port'), function(){
 	console.log("Express server listening on port " + app.get('port'));
@@ -54,10 +57,36 @@ server.listen(app.get('port'), function(){
 
 
 
+
+io.sockets.on('connection', function (socket) {
+	console.log('Connecting');
+	socket.set('body', createBody());
+	socket
+		.on('disconnect', function() {
+			console.log('Disconnect');
+			socket.get('body', function(err, body) {
+				if( !err ) {
+					world.DestroyBody(body);
+					//socket.broadcast.emit('remove', body_id);
+				}
+			});
+		})
+		.on('direction', function(socket, dir) {
+			var body = this.get('body');
+		});
+});
+
+
+
+
+
+
+
+
 // Define world
 var worldAABB = new b2d.b2AABB();
-worldAABB.lowerBound.Set(-11500, -115000);
-worldAABB.upperBound.Set( 11500.0,  11500.0);
+worldAABB.lowerBound.Set(-11500, -11500);
+worldAABB.upperBound.Set( 11500,  11500);
 
 var gravity = new b2d.b2Vec2(0.0, 0.0);
 var doSleep = true;
@@ -96,8 +125,6 @@ timedEvent(1/30, function() {
 	}
 });
 
-createBody();
-createBody();
 function createBody() {
 	var offset = Math.floor((Math.random()*100)+1);
 	
@@ -116,6 +143,7 @@ function createBody() {
 	body.ApplyTorque(100);
 
 	bodies.push(body);
+
 	return body;
 }
 
