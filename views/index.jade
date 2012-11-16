@@ -1,0 +1,10 @@
+extends layout
+
+block append head
+  script(src="/socket.io/socket.io.js")
+  script(src="/javascripts/NodeTrek.js")
+
+block content
+  h1= title
+  p Welcome4 to #{title}
+  canvas(id="game", width="500", height="500")
