@@ -11,6 +11,7 @@ var sys = require('sys')
   , path = require('path')
   , b2d = require('box2d')
   , async = require('async')
+  , em = require('./public/javascripts/entities.js')
   , io = require('socket.io');
 
 var app = express();
@@ -57,23 +58,64 @@ server.listen(app.get('port'), function(){
 
 
 
-
 io.sockets.on('connection', function (socket) {
-	console.log('Connecting');
-	socket.set('body', createBody());
+	socket.get('entity', function(err, entity) {
+		console.log(err+' : '+entity);
+	});
+
+	var body = createBody();
+	var entity = em.newEntity('player');
+	socket.set('entity', entity);
+	em.addComponent(entity, 'body', body);
+
+	var player = {
+        'entity': entity,
+        'body': {
+            'position': body.GetPosition(),
+            'angle': body.GetAngle()
+        }
+    };
+
+	socket.emit('player', player);
+	socket.broadcast.emit('other', player);
+
+	em.forEach('body', function(entity, body) {
+		socket.emit('other',{
+			'entity': entity,
+			'body': {
+				'position': body.GetPosition(),
+				'angle': body.GetAngle()
+			}
+		});
+	});
+
+
+	console.log("Player id: "+entity);
+
 	socket
+		//set player heading and start rotating it that way
+		.on('head', function(v) {
+			//socket.broadcast.emit('remove', body_id);
+		})
+
+		// fire torpedo
+		.on('torpedo', function(d) {
+			
+		})
+
+		// set warp factor
+		.on('velocity', function(warp) {
+
+		})
+
+		// remove player from world
 		.on('disconnect', function() {
 			console.log('Disconnect');
-			socket.get('body', function(err, body) {
-				if( !err ) {
-					world.DestroyBody(body);
-					//socket.broadcast.emit('remove', body_id);
-				}
-			});
-		})
-		.on('direction', function(socket, dir) {
-			var body = this.get('body');
+			world.DestroyBody(body);
+			em.removeEntity(entity);
 		});
+
+
 });
 
 
@@ -114,15 +156,16 @@ timedEvent(1.0/60.0, function() {
 });
 
 // Update Client
-timedEvent(1/30, function() {	
-	for(var i = 0; i < bodies.length; ++i) {
-		var body = bodies[i];
-		if( !body.IsSleeping() ) {
-			var position = body.GetPosition();
-			var angle = body.GetAngle();
-			io.sockets.emit('body', {id: i, 'position': position, 'angle': angle});
-		}
-	}
+timedEvent(1/20, function() {	
+	em.forEach('body', function(entity, body) {
+		io.sockets.emit('update', {
+			'entity': entity,
+			'body': {
+				'position': body.GetPosition(),
+				'angle': body.GetAngle()
+			}
+		});
+	});
 });
 
 function createBody() {
@@ -143,6 +186,7 @@ function createBody() {
 	body.ApplyTorque(100);
 
 	bodies.push(body);
+	body.id = bodies.length;
 
 	return body;
 }
