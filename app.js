@@ -156,7 +156,7 @@ timedEvent(1.0/60.0, function() {
 });
 
 // Update Client
-timedEvent(1/20, function() {	
+timedEvent(1/30, function() {	
 	em.forEach('body', function(entity, body) {
 		io.sockets.emit('update', {
 			'entity': entity,

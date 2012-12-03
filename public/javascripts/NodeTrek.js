@@ -9,6 +9,7 @@ $(function() {
 	context.lineWidth = 15;
 	context.stroke();
 
+
 	var socket = io.connect('http://destructivegenius.com:3000');
 
 	//client
@@ -42,12 +43,13 @@ $(function() {
 	},1.0/60.0);
 
 	function doUpdate() {
-        if( mouse_up && mouse_event.which == 1 ) // left mouse
+/*        if( mouse_up && mouse_event.which == 1 ) // left mouse
         {
             //fire torpedo
             var heading = vector.to_unit(vector.sub(screen_to_world(ctx, mouse_down), player.position));
             socket.send({type:103, heading:heading});
         }
+*/
 	}
 
 	function doDraw() {
